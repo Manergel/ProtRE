@@ -1,95 +1,117 @@
 #include "MyCharacter.h"
-#include "EnhancedInputSubsystems.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputMappingContext.h"
+#include "InputAction.h"
 
-// Sets default values
+// Constructor
 AMyCharacter::AMyCharacter()
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Enable Tick
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Create and setup Spring Arm
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+	SpringArm->SetupAttachment(RootComponent);
+	SpringArm->TargetArmLength = 300.0f;
+	SpringArm->bUsePawnControlRotation = true;
+
+	// Create and setup Camera
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
+	Camera->bUsePawnControlRotation = false;
+
+	// Initialize Camera and Aiming settings
+	DefaultFOV = 90.0f;
+	AimingFOV = 70.0f;
+	CameraTransitionSpeed = 10.0f;
+	bIsAiming = false;
 }
 
-// Called when the game starts or when spawned
+// BeginPlay
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//Add Input Mapping Context to the Player
+	// Set initial FOV
+	Camera->SetFieldOfView(DefaultFOV);
+
+	// Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(InputMappingContext, 0);
 		}
-
 	}
-
 }
 
-
-
-// Called every frame
+// Tick
 void AMyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Smoothly transition camera FOV
+	float TargetFOV = bIsAiming ? AimingFOV : DefaultFOV;
+	float CurrentFOV = Camera->FieldOfView;
+	float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, CameraTransitionSpeed);
+	Camera->SetFieldOfView(NewFOV);
 }
 
-// Called to bind functionality to input
+// Move
+void AMyCharacter::Move(const FInputActionValue& Value)
+{
+	FVector2D MovementVector = Value.Get<FVector2D>();
+	if (Controller)
+	{
+		AddMovementInput(GetActorForwardVector(), MovementVector.Y);
+		AddMovementInput(GetActorRightVector(), MovementVector.X);
+	}
+}
+
+// Look
+void AMyCharacter::Look(const FInputActionValue& Value)
+{
+	FVector2D LookAxisVector = Value.Get<FVector2D>();
+	if (Controller)
+	{
+		AddControllerYawInput(LookAxisVector.X);
+		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+// Start Aiming
+void AMyCharacter::StartAiming()
+{
+	bIsAiming = true;
+}
+
+// Stop Aiming
+void AMyCharacter::StopAiming()
+{
+	bIsAiming = false;
+}
+
+// SetupPlayerInputComponent
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		//Bind Move
-		if (MoveAction)
-		{
-			EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMyCharacter::Move);
-		}
+		// Bind Movement
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMyCharacter::Move);
 
-		//Bind Look
-		if (LookAction)
-		{
-			EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMyCharacter::Look);
-		}
+		// Bind Look
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMyCharacter::Look);
+
+		// Bind Aiming
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &AMyCharacter::StartAiming);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AMyCharacter::StopAiming);
 	}
 }
 
-void AMyCharacter::Move(const FInputActionValue& Value)
-{
-	//Get the movement vector
-	FVector2D MovementVector = Value.Get<FVector2D>();
-
-	//Apply movement
-	if (Controller != nullptr)
-	{
-		//Forward/Backward
-		if (MovementVector.Y != 0.0f)
-		{
-			AddMovementInput(GetActorForwardVector(), MovementVector.Y);
-		}
-
-		//Right/Left
-		if (MovementVector.X != 0.0f)
-		{
-			AddMovementInput(GetActorRightVector(), MovementVector.X);
-		}
-	}
-}
-
-void AMyCharacter::Look(const FInputActionValue& Value)
-{
-	//Get the look vector
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
-
-	//Apply camera movement
-	if (Controller != nullptr)
-	{
-		AddControllerYawInput(LookAxisVector.X); //Horizontal(yaw)
-		AddControllerPitchInput(LookAxisVector.Y); //Vertical(pitch)
-	}
-}
 
 

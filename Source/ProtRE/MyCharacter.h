@@ -5,37 +5,69 @@
 #include "InputActionValue.h"
 #include "MyCharacter.generated.h"
 
+class UCameraComponent;
+class USpringArmComponent;
+class UEnhancedInputComponent;
+class UInputMappingContext;
+class UInputAction;
+
 UCLASS()
 class PROTRE_API AMyCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
+	// Constructor
 	AMyCharacter();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	// Enhanced Input Functions
+	// Enhanced Input Actions
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void StartAiming();
+	void StopAiming();
 
 	// Input System Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
-	class UInputMappingContext* InputMappingContext;
+	UInputMappingContext* InputMappingContext;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
-	class UInputAction* MoveAction;
+	UInputAction* MoveAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
-	class UInputAction* LookAction;
+	UInputAction* LookAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	UInputAction* AimAction;
+
+	// Camera Components
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	USpringArmComponent* SpringArm;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	UCameraComponent* Camera;
+
+	// Camera and Aiming Settings
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
+	float DefaultFOV;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
+	float AimingFOV;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
+	float CameraTransitionSpeed;
+
+	bool bIsAiming;
+
+	// Setup player input
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
 };
+
+
