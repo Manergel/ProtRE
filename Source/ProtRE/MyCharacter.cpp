@@ -12,6 +12,8 @@ AMyCharacter::AMyCharacter()
 	// Enable Tick
 	PrimaryActorTick.bCanEverTick = true;
 
+	Speed = 0.0f;
+
 	// Create and setup Spring Arm
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
