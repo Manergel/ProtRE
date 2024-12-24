@@ -5,6 +5,9 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
 #include "InputAction.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerController.h"
+#include "DrawDebugHelpers.h"
 
 // Constructor
 AMyCharacter::AMyCharacter()
@@ -30,6 +33,7 @@ AMyCharacter::AMyCharacter()
 	AimingFOV = 70.0f;
 	CameraTransitionSpeed = 10.0f;
 	bIsAiming = false;
+	AmmoCount = 10;
 }
 
 // BeginPlay
@@ -101,6 +105,10 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	PlayerInputComponent->BindAction("Shoot", IE_Pressed, this, &AMyCharacter::Shoot);
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMyCharacter::Reload);
+
+
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		// Bind Movement
@@ -113,6 +121,12 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &AMyCharacter::StartAiming);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AMyCharacter::StopAiming);
 	}
+}
+
+void AMyCharacter::Shoot()
+{
+
+
 }
 
 

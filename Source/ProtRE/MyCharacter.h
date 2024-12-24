@@ -33,34 +33,41 @@ protected:
 	// Input System Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputMappingContext* InputMappingContext;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputAction* MoveAction;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputAction* LookAction;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputAction* AimAction;
 
 	// Camera Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	USpringArmComponent* SpringArm;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	UCameraComponent* Camera;
 
 	// Camera and Aiming Settings
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	float DefaultFOV;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	float AimingFOV;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	float CameraTransitionSpeed;
 
+	// Combat logic
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Combat")
+	int32 AmmoCount;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	UParticleSystem* MuzzleFlashEffect;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	UParticleSystem* ImpactEffect;
+
+	void Shoot();
+	void Reload();
+
 	bool bIsAiming;
+
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 	// Setup player input
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
