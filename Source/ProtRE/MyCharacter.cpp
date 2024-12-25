@@ -125,8 +125,47 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 void AMyCharacter::Shoot()
 {
+	if (AmmoCount <= 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Out of Ammo"));
+		return;
+	}
 
+	AmmoCount--;
 
+	if (MuzzleFlashEffect)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlashEffect, GetActorLocation());
+	}
+
+	FVector Start = Camera->GetComponentLocation();
+	FVector End = Start + (Camera->GetForwardVector() * 10000.0f);
+
+	FHitResult HitResult;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params))
+	{
+		if (ImpactEffect)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, HitResult.Location);
+		}
+
+		if (AActor* HitActor = HitResult.GetActor())
+		{
+			UGameplayStatics::ApplyDamage(HitActor, 10.0f, GetController(), this, nullptr);
+			UE_LOG(LogTemp, Log, TEXT("Hit Actor: %s"), *HitActor->GetName());
+		}
+	}
+
+	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.0f, 0, 1.0f);
+}
+
+void AMyCharacter::Reload()
+{
+	AmmoCount = 10;
+	UE_LOG(LogTemp, Log, TEXT("Reloaded! Ammo Count: %d"), AmmoCount);
 }
 
 
