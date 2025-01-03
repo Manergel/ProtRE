@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "PistolWeapon.h"
 #include "InputActionValue.h"
 #include "MyCharacter.generated.h"
 
@@ -39,6 +40,10 @@ protected:
 	UInputAction* LookAction;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputAction* AimAction;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	UInputAction* ShootAction;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	UInputAction* ReloadAction;
 
 	// Camera Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
@@ -54,18 +59,24 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	float CameraTransitionSpeed;
 
-	// Combat logic
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Combat")
-	int32 AmmoCount;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
-	UParticleSystem* MuzzleFlashEffect;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
-	UParticleSystem* ImpactEffect;
+	// Weapon reference
 
-	void Shoot();
-	void Reload();
+	//UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Combat")
+	//int32 AmmoCount;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	//UParticleSystem* MuzzleFlashEffect;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	//UParticleSystem* ImpactEffect;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	TSubclassOf<APistolWeapon> PistolClass;
+	UPROPERTY()
+	APistolWeapon* EquippedWeapon;
 
-	bool bIsAiming;
+	void StartShooting();
+	void StopShooting();
+	void ReloadWeapon();
+
+	/*bool bIsAiming;*/
 
 	// Setup player input
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;

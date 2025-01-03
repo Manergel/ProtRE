@@ -8,12 +8,14 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 #include "DrawDebugHelpers.h"
+#include "PistolWeapon.h"
 
 // Constructor
 AMyCharacter::AMyCharacter()
 {
 	// Enable Tick
 	PrimaryActorTick.bCanEverTick = true;
+	EquippedWeapon = nullptr;
 
 	Speed = 0.0f;
 
@@ -32,8 +34,8 @@ AMyCharacter::AMyCharacter()
 	DefaultFOV = 90.0f;
 	AimingFOV = 70.0f;
 	CameraTransitionSpeed = 10.0f;
-	bIsAiming = false;
-	AmmoCount = 10;
+	//bIsAiming = false;
+	//AmmoCount = 10;
 }
 
 // BeginPlay
@@ -43,6 +45,15 @@ void AMyCharacter::BeginPlay()
 
 	// Set initial FOV
 	Camera->SetFieldOfView(DefaultFOV);
+
+	if (PistolClass)
+	{
+		EquippedWeapon = GetWorld()->SpawnActor<APistolWeapon>(PistolClass);
+		if (EquippedWeapon)
+		{
+			EquippedWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("WeaponSocket"));
+		}
+	}
 
 	// Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
@@ -59,11 +70,11 @@ void AMyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Smoothly transition camera FOV
-	float TargetFOV = bIsAiming ? AimingFOV : DefaultFOV;
-	float CurrentFOV = Camera->FieldOfView;
-	float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, CameraTransitionSpeed);
-	Camera->SetFieldOfView(NewFOV);
+	//// Smoothly transition camera FOV
+	///*float TargetFOV = bIsAiming ? AimingFOV : DefaultFOV;*/
+	//float CurrentFOV = Camera->FieldOfView;
+	///*float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, CameraTransitionSpeed);*/
+	//Camera->SetFieldOfView(NewFOV);
 }
 
 // Move
@@ -89,24 +100,24 @@ void AMyCharacter::Look(const FInputActionValue& Value)
 }
 
 // Start Aiming
-void AMyCharacter::StartAiming()
-{
-	bIsAiming = true;
-}
+//void AMyCharacter::StartAiming()
+//{
+//	bIsAiming = true;
+//}
 
 // Stop Aiming
-void AMyCharacter::StopAiming()
-{
-	bIsAiming = false;
-}
+//void AMyCharacter::StopAiming()
+//{
+//	bIsAiming = false;
+//}
 
 // SetupPlayerInputComponent
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	PlayerInputComponent->BindAction("Shoot", IE_Pressed, this, &AMyCharacter::Shoot);
-	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMyCharacter::Reload);
+	//PlayerInputComponent->BindAction("Shoot", IE_Pressed, this, &AMyCharacter::StartShooting);
+	//PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMyCharacter::ReloadWeapon);
 
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
@@ -117,56 +128,66 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		// Bind Look
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMyCharacter::Look);
 
-		// Bind Aiming
-		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &AMyCharacter::StartAiming);
-		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AMyCharacter::StopAiming);
+		// Bind Weapon action
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Started, this, &AMyCharacter::StartShooting);
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AMyCharacter::ReloadWeapon);
 	}
 }
 
-void AMyCharacter::Shoot()
+void AMyCharacter::StartShooting()
 {
-	if (AmmoCount <= 0)
+	if (EquippedWeapon)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Out of Ammo"));
-		return;
+		EquippedWeapon->Fire();
 	}
-
-	AmmoCount--;
-
-	if (MuzzleFlashEffect)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlashEffect, GetActorLocation());
-	}
-
-	FVector Start = Camera->GetComponentLocation();
-	FVector End = Start + (Camera->GetForwardVector() * 10000.0f);
-
-	FHitResult HitResult;
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(this);
-
-	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params))
-	{
-		if (ImpactEffect)
-		{
-			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, HitResult.Location);
-		}
-
-		if (AActor* HitActor = HitResult.GetActor())
-		{
-			UGameplayStatics::ApplyDamage(HitActor, 10.0f, GetController(), this, nullptr);
-			UE_LOG(LogTemp, Log, TEXT("Hit Actor: %s"), *HitActor->GetName());
-		}
-	}
-
-	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.0f, 0, 1.0f);
 }
 
-void AMyCharacter::Reload()
+void AMyCharacter::StopShooting()
 {
-	AmmoCount = 10;
-	UE_LOG(LogTemp, Log, TEXT("Reloaded! Ammo Count: %d"), AmmoCount);
+	// Stop firing logic if needed (e.g., for automatic weapons)
 }
+
+void AMyCharacter::ReloadWeapon()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->Reload();
+	}
+}
+
+
+
+//	AmmoCount--;
+//
+//	if (MuzzleFlashEffect)
+//	{
+//		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlashEffect, GetActorLocation());
+//	}
+//
+//	FVector Start = Camera->GetComponentLocation();
+//	FVector End = Start + (Camera->GetForwardVector() * 10000.0f);
+//
+//	FHitResult HitResult;
+//	FCollisionQueryParams Params;
+//	Params.AddIgnoredActor(this);
+//
+//	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params))
+//	{
+//		if (ImpactEffect)
+//		{
+//			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, HitResult.Location);
+//		}
+//
+//		if (AActor* HitActor = HitResult.GetActor())
+//		{
+//			UGameplayStatics::ApplyDamage(HitActor, 10.0f, GetController(), this, nullptr);
+//			UE_LOG(LogTemp, Log, TEXT("Hit Actor: %s"), *HitActor->GetName());
+//		}
+//	}
+//
+//	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.0f, 0, 1.0f);
+//}
+//
 
 
 
